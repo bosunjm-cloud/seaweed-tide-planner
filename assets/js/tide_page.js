@@ -29,7 +29,7 @@ import {
   statusLabel,
   weekdayIndex
 } from "./tide_format.js";
-import { renderTideChart } from "./tide_charts.js?v=20260611-threshold-label-gutter";
+import { renderTideChart } from "./tide_charts.js?v=20260611-mobile-layout";
 
 const state = {
   location: null,
@@ -37,13 +37,17 @@ const state = {
   thresholdM: 0.7,
   thresholdEnabled: true,
   forecastDays: 7,
+  overviewMonths: 3,
   lowListDays: 14,
-  lastForecast: null
+  lastForecast: null,
+  forecastRangeUserSelected: false,
+  overviewRangeUserSelected: false
 };
 
 const els = {};
 let tideLocations = getLocations();
 const TIDE_PROFILES = getProfiles();
+const MOBILE_QUERY = window.matchMedia("(max-width: 620px)");
 const SYMBOLS = {
   plant: "\uD83C\uDF3F",
   newMoon: "\uD83C\uDF11",
@@ -57,6 +61,7 @@ async function init() {
   cacheElements();
   await loadLocationRecords();
   populateLocationSelect();
+  applyResponsiveDefaults();
   bindEvents();
   setLocation(resolveInitialLocationKey(), { updateUrl: false });
   window.setInterval(renderClock, 30000);
@@ -104,7 +109,9 @@ function cacheElements() {
   });
 
   els.forecastRangeLabel = document.getElementById("forecastRangeLabel");
+  els.overviewRangeLabel = document.getElementById("overviewRangeLabel");
   els.forecastRangeButtons = Array.from(document.querySelectorAll("[data-forecast-days]"));
+  els.overviewRangeButtons = Array.from(document.querySelectorAll("[data-overview-months]"));
 }
 
 async function loadLocationRecords() {
@@ -151,7 +158,20 @@ function bindEvents() {
       if (![3, 5, 7].includes(days) || days === state.forecastDays) return;
 
       state.forecastDays = days;
+      state.forecastRangeUserSelected = true;
       syncForecastRangeControls();
+      render();
+    });
+  });
+
+  els.overviewRangeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const months = Number(button.dataset.overviewMonths);
+      if (![1, 3].includes(months) || months === state.overviewMonths) return;
+
+      state.overviewMonths = months;
+      state.overviewRangeUserSelected = true;
+      syncOverviewRangeControls();
       render();
     });
   });
@@ -162,7 +182,17 @@ function bindEvents() {
   });
 
   window.addEventListener("resize", debounce(() => {
-    if (state.lastForecast) renderCharts(state.lastForecast);
+    const previousForecastDays = state.forecastDays;
+    const previousOverviewMonths = state.overviewMonths;
+    applyResponsiveDefaults();
+
+    if (previousForecastDays !== state.forecastDays || previousOverviewMonths !== state.overviewMonths) {
+      render();
+    } else if (state.lastForecast) {
+      syncOverviewRangeControls();
+      renderCharts(state.lastForecast);
+      renderLowTides();
+    }
   }, 150));
 }
 
@@ -206,6 +236,7 @@ function render() {
   renderLocationSummary();
   syncThresholdControls();
   syncForecastRangeControls();
+  syncOverviewRangeControls();
 
   const now = new Date();
   const forecastRange = rangeAroundNow(now, 1, 95);
@@ -214,6 +245,9 @@ function render() {
   const weekRange = rangeAroundNow(now, 0.15, state.forecastDays);
   const weekCurve = tideCurve(state.profile, weekRange.start, weekRange.end, 20);
   const weekExtremes = tideExtremes(weekCurve);
+  const overviewRange = rangeAroundNow(now, 1, state.overviewMonths === 1 ? 34 : 95);
+  const overviewCurve = tideCurve(state.profile, overviewRange.start, overviewRange.end, 30);
+  const overviewExtremes = tideExtremes(overviewCurve);
   const moons = moonEvents(now, forecastRange.end);
   const springs = springWindows(now, forecastRange.end);
 
@@ -221,10 +255,13 @@ function render() {
     now,
     forecastRange,
     weekRange,
+    overviewRange,
     fullCurve,
     fullExtremes,
     weekCurve,
     weekExtremes,
+    overviewCurve,
+    overviewExtremes,
     moons,
     springs
   };
@@ -431,6 +468,7 @@ function renderMoon(now) {
 }
 
 function renderCharts(forecast) {
+  const mobile = isMobileView();
   const weekHarvestWindows = buildHarvestDayRanges(
     forecast.weekRange.start,
     forecast.weekRange.end,
@@ -439,8 +477,8 @@ function renderCharts(forecast) {
     state.thresholdEnabled
   );
   const overviewHarvestWindows = buildHarvestDayRanges(
-    forecast.forecastRange.start,
-    forecast.forecastRange.end,
+    forecast.overviewRange.start,
+    forecast.overviewRange.end,
     state.profile,
     state.thresholdM,
     state.thresholdEnabled
@@ -454,16 +492,21 @@ function renderCharts(forecast) {
     thresholdEnabled: state.thresholdEnabled,
     thresholdM: state.thresholdM,
     now: forecast.now,
-    leftPadding: 96,
-    compact: false,
-    legendSpace: true,
+    leftPadding: mobile ? 44 : 96,
+    compact: mobile,
+    legendSpace: !mobile,
+    showExtremes: !mobile,
+    showThresholdLabel: !mobile,
+    topPadding: mobile ? 14 : undefined,
+    axisLabelSize: mobile ? 9 : 11,
+    tickLabelSize: mobile ? 9 : 10,
     timeGrid: "half-day",
     thresholdShadeMode: "harvest-windows",
     harvestWindows: weekHarvestWindows,
     thresholdLabelPosition: "left-of-axis"
   });
 
-  renderTideChart(els.tideChartOverview, forecast.fullCurve, forecast.fullExtremes, {
+  renderTideChart(els.tideChartOverview, forecast.overviewCurve, forecast.overviewExtremes, {
     timeZone: state.profile.timezone,
     thresholdEnabled: state.thresholdEnabled,
     thresholdM: state.thresholdM,
@@ -471,12 +514,15 @@ function renderCharts(forecast) {
     compact: true,
     timeGrid: "month",
     monthBanding: true,
-    topPadding: 34,
-    leftPadding: 96,
+    topPadding: mobile ? 18 : 34,
+    leftPadding: mobile ? 44 : 96,
     showExtremes: false,
+    showThresholdLabel: !mobile,
+    axisLabelSize: mobile ? 9 : 11,
+    tickLabelSize: mobile ? 9 : 10,
     thresholdShadeMode: "harvest-windows",
     harvestWindows: groupedOverviewHarvestWindows,
-    harvestWindowLabel: formatChartHarvestWindowLabel,
+    harvestWindowLabel: mobile ? "" : formatChartHarvestWindowLabel,
     harvestWindowLabelMinWidth: 54,
     harvestWindowLabelPosition: "above-plot",
     harvestWindowLabelOffset: 13,
@@ -493,7 +539,7 @@ function renderOverviewHarvestWindowSummary(windows) {
   }
 
   if (!windows.length) {
-    els.overviewHarvestWindows.innerHTML = `<span>No harvest windows in this 3-month range.</span>`;
+    els.overviewHarvestWindows.innerHTML = `<span>No harvest windows in this ${state.overviewMonths}-month range.</span>`;
     return;
   }
 
@@ -688,7 +734,7 @@ function formatTidePeriodCell(extremes) {
 
 function formatTideTableCell(extreme) {
   if (!extreme) return `<span class="muted-cell">--</span>`;
-  return `<span class="tide-event-cell">${escapeHtml(formatTime(extreme.date, state.profile.timezone))} <span class="tide-event-height">(${escapeHtml(formatCompactMetres(extreme.heightM))})</span></span>`;
+  return `<span class="tide-event-cell"><span class="tide-event-time">${escapeHtml(formatTime(extreme.date, state.profile.timezone))}</span> <span class="tide-event-height">(${escapeHtml(formatCompactMetres(extreme.heightM))})</span></span>`;
 }
 
 function formatCompactMetres(value) {
@@ -744,6 +790,18 @@ function harvestWindowInfoForDate(dateKey, windows) {
 function renderLowTideStatus(isHarvest, isSpringLow, moon, windowInfo) {
   const moonText = moon ? `<span class="moon-symbol-inline">${escapeHtml(moonSymbol(moon.type))}</span>` : "";
   const harvestText = harvestStatusText(windowInfo);
+
+  if (isMobileView()) {
+    if (isHarvest && isSpringLow) {
+      return `${moonText}<span class="spring-low" title="${escapeAttribute(`Spring low - ${harvestText}`)}">${escapeHtml(SYMBOLS.plant)}${escapeHtml(SYMBOLS.down)}</span>`;
+    }
+
+    if (isHarvest) {
+      return `${moonText}<span class="harvest-text" title="${escapeAttribute(harvestText)}">${escapeHtml(SYMBOLS.plant)}</span>`;
+    }
+
+    return moon ? `${moonText}` : "";
+  }
 
   if (isHarvest && isSpringLow) {
     return `${moonText}<span class="spring-low">${escapeHtml(SYMBOLS.plant)} Spring low - ${escapeHtml(harvestText)} ${escapeHtml(SYMBOLS.down)}</span>`;
@@ -920,6 +978,32 @@ function syncForecastRangeControls() {
     const isSelected = Number(button.dataset.forecastDays) === state.forecastDays;
     button.setAttribute("aria-pressed", String(isSelected));
   });
+}
+
+function syncOverviewRangeControls() {
+  if (els.overviewRangeLabel) {
+    const suffix = isMobileView() ? "" : " & Harvest Windows";
+    els.overviewRangeLabel.textContent = `${state.overviewMonths}-Month Tide Overview${suffix}`;
+  }
+
+  els.overviewRangeButtons.forEach((button) => {
+    const isSelected = Number(button.dataset.overviewMonths) === state.overviewMonths;
+    button.setAttribute("aria-pressed", String(isSelected));
+  });
+}
+
+function applyResponsiveDefaults() {
+  if (!state.forecastRangeUserSelected) {
+    state.forecastDays = isMobileView() ? 3 : 7;
+  }
+
+  if (!state.overviewRangeUserSelected) {
+    state.overviewMonths = isMobileView() ? 1 : 3;
+  }
+}
+
+function isMobileView() {
+  return MOBILE_QUERY.matches;
 }
 
 function clampThreshold(value) {

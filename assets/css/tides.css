@@ -542,7 +542,8 @@ textarea {
   flex-wrap: wrap;
 }
 
-.forecast-range-selector {
+.forecast-range-selector,
+.overview-range-selector {
   display: inline-flex;
   align-items: center;
   overflow: hidden;
@@ -551,7 +552,8 @@ textarea {
   background: #fff;
 }
 
-.forecast-range-selector button {
+.forecast-range-selector button,
+.overview-range-selector button {
   min-height: 30px;
   padding: 0 10px;
   border: 0;
@@ -562,11 +564,13 @@ textarea {
   font-size: 0.75rem;
 }
 
-.forecast-range-selector button:last-child {
+.forecast-range-selector button:last-child,
+.overview-range-selector button:last-child {
   border-right: 0;
 }
 
-.forecast-range-selector button[aria-pressed="true"] {
+.forecast-range-selector button[aria-pressed="true"],
+.overview-range-selector button[aria-pressed="true"] {
   background: rgba(15, 118, 110, 0.1);
   color: var(--accent);
   font-weight: 700;
@@ -726,6 +730,10 @@ textarea {
   text-align: center;
 }
 
+.low-tide-table .high-tide-heading {
+  color: var(--warn);
+}
+
 .low-tide-table thead tr:nth-child(2) th {
   border-bottom-color: var(--border);
   color: var(--text-muted);
@@ -738,11 +746,22 @@ textarea {
 }
 
 .tide-event-cell {
+  display: inline-flex;
+  gap: 4px;
   white-space: nowrap;
 }
 
 .tide-event-height {
   color: var(--text-muted);
+}
+
+.low-tide-table .high-tide-cell {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.low-tide-table .high-tide-cell .tide-event-height {
+  color: var(--warn);
 }
 
 .low-tide-table tr.harvest-row td {
@@ -1870,7 +1889,124 @@ button:disabled {
     display: none;
   }
 
+  .location-card {
+    gap: 8px;
+  }
+
+  .location-card .clock-panel,
+  .location-card .location-card-status {
+    display: none;
+  }
+
+  .location-field {
+    gap: 6px;
+  }
+
+  .summary-card {
+    min-height: 0;
+  }
+
+  .station-tide-panel {
+    padding: 16px 10px 20px;
+  }
+
+  .station-subhead {
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.82rem;
+  }
+
+  .chart-subhead {
+    flex-direction: row;
+  }
+
+  .station-subhead-main {
+    display: grid;
+    gap: 4px;
+  }
+
+  .harvest-chip,
+  .harvest-window-summary {
+    display: none;
+  }
+
+  .forecast-range-selector button,
+  .overview-range-selector button {
+    min-width: 48px;
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 0.8rem;
+  }
+
+  .station-chart-frame.detail {
+    height: 245px;
+    min-height: 245px;
+  }
+
+  .station-chart-frame.overview {
+    height: 235px;
+    min-height: 235px;
+  }
+
+  .station-table-wrap {
+    overflow-x: visible;
+  }
+
   .low-tide-table {
-    min-width: 560px;
+    min-width: 0;
+    table-layout: fixed;
+    font-size: 0.68rem;
+  }
+
+  .low-tide-table th {
+    padding: 4px 2px;
+    font-size: 0.56rem;
+    letter-spacing: 0.2px;
+    text-align: center;
+  }
+
+  .low-tide-table th:first-child,
+  .low-tide-table td:first-child {
+    width: 16%;
+    text-align: left;
+  }
+
+  .low-tide-table td {
+    padding: 6px 2px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .low-tide-table tr.harvest-row td {
+    font-weight: 700;
+  }
+
+  .tide-event-cell {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 1px;
+    align-items: center;
+    line-height: 1.08;
+    white-space: normal;
+  }
+
+  .tide-event-time {
+    display: block;
+  }
+
+  .tide-event-height {
+    display: block;
+    font-size: 0.86em;
+  }
+
+  .moon-symbol-inline {
+    min-width: 0;
+    margin-right: 2px;
+    font-size: 0.72rem;
+  }
+
+  .harvest-text,
+  .spring-low {
+    white-space: nowrap;
   }
 }

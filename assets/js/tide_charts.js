@@ -73,7 +73,7 @@ export function renderTideChart(canvas, curve, extremes, options = {}) {
   const pad = {
     top: Number.isFinite(options.topPadding) ? options.topPadding : options.legendSpace ? 42 : 18,
     right: 16,
-    bottom: options.timeGrid === "half-day" || options.timeGrid === "month" ? 46 : 34,
+    bottom: Number.isFinite(options.bottomPadding) ? options.bottomPadding : options.timeGrid === "half-day" || options.timeGrid === "month" ? 46 : 34,
     left: Number.isFinite(options.leftPadding) ? options.leftPadding : 46
   };
   const plotW = width - pad.left - pad.right;
@@ -130,7 +130,7 @@ export function renderTideChart(canvas, curve, extremes, options = {}) {
       ctx.lineTo(nowX, pad.top + plotH);
       ctx.stroke();
       ctx.restore();
-      drawText(ctx, "Now", nowX + 5, pad.top + 10, { color: COLORS.now, size: 11 });
+      drawText(ctx, "Now", nowX + 5, pad.top + 10, { color: COLORS.now, size: options.tickLabelSize || 11 });
     }
   }
 }
@@ -148,18 +148,18 @@ function drawGrid(ctx, width, height, pad, minH, maxH, x, y, minTime, maxTime, o
     ctx.moveTo(pad.left, yy);
     ctx.lineTo(width - pad.right, yy);
     ctx.stroke();
-    drawText(ctx, value.toFixed(1), pad.left - 8, yy, { align: "right", color: COLORS.axis, size: 11 });
+    drawText(ctx, value.toFixed(1), pad.left - 8, yy, { align: "right", color: COLORS.axis, size: options.axisLabelSize || 11 });
   }
 
   const plotW = width - pad.left - pad.right;
   if (!options.compact && options.timeGrid === "half-day") {
-    drawHalfDayTimeGrid(ctx, width, height, pad, x, minTime, maxTime, options.timeZone);
+    drawHalfDayTimeGrid(ctx, width, height, pad, x, minTime, maxTime, options.timeZone, options);
     ctx.restore();
     return;
   }
 
   if (options.timeGrid === "month") {
-    drawMonthTimeGrid(ctx, width, height, pad, x, minTime, maxTime, options.timeZone);
+    drawMonthTimeGrid(ctx, width, height, pad, x, minTime, maxTime, options.timeZone, options);
     ctx.restore();
     return;
   }
@@ -180,13 +180,13 @@ function drawGrid(ctx, width, height, pad, minH, maxH, x, y, minTime, maxTime, o
       ? formatDate(labelDate, options.timeZone)
       : formatDateTime(labelDate, options.timeZone);
     const align = i === 0 ? "left" : i === tickCount ? "right" : "center";
-    drawText(ctx, label, xx, height - 16, { align, color: COLORS.axis, size: 10 });
+    drawText(ctx, label, xx, height - 16, { align, color: COLORS.axis, size: options.tickLabelSize || 10 });
   }
 
   ctx.restore();
 }
 
-function drawHalfDayTimeGrid(ctx, width, height, pad, x, minTime, maxTime, timeZone) {
+function drawHalfDayTimeGrid(ctx, width, height, pad, x, minTime, maxTime, timeZone, options = {}) {
   const ticks = buildHalfDayTicks(minTime, maxTime, timeZone || "UTC");
 
   for (const tick of ticks) {
@@ -205,7 +205,7 @@ function drawHalfDayTimeGrid(ctx, width, height, pad, x, minTime, maxTime, timeZ
     drawText(ctx, isDayStart ? formatDate(new Date(tick.timeMs), timeZone) : "12:00", xx, height - 19, {
       align,
       color: COLORS.axis,
-      size: 10,
+      size: options.tickLabelSize || 10,
       weight: isDayStart ? 700 : 500
     });
   }
@@ -230,7 +230,7 @@ function buildHalfDayTicks(minTime, maxTime, timeZone) {
   return ticks.sort((a, b) => a.timeMs - b.timeMs);
 }
 
-function drawMonthTimeGrid(ctx, width, height, pad, x, minTime, maxTime, timeZone) {
+function drawMonthTimeGrid(ctx, width, height, pad, x, minTime, maxTime, timeZone, options = {}) {
   const zone = timeZone || "UTC";
   const startKey = localDateKey(new Date(minTime), zone);
   const endKey = localDateKey(new Date(maxTime), zone);
@@ -271,7 +271,7 @@ function drawMonthTimeGrid(ctx, width, height, pad, x, minTime, maxTime, timeZon
         drawText(ctx, formatMidMonthLabel(new Date(midMonth), zone), midX, height - 29, {
           align: "center",
           color: COLORS.axis,
-          size: 9
+          size: options.tickLabelSize ? Math.max(8, options.tickLabelSize - 1) : 9
         });
       }
 
@@ -279,7 +279,7 @@ function drawMonthTimeGrid(ctx, width, height, pad, x, minTime, maxTime, timeZon
       drawText(ctx, formatMonthLabel(new Date(visibleStart + (visibleEnd - visibleStart) / 2), zone), labelX, height - 14, {
         align: "center",
         color: COLORS.axis,
-        size: 11,
+        size: options.axisLabelSize || 11,
         weight: 700
       });
     }
@@ -354,6 +354,11 @@ function drawThresholdLine(ctx, pad, plotW, thresholdY, threshold, options = {})
   ctx.lineTo(pad.left + plotW, thresholdY);
   ctx.stroke();
   ctx.setLineDash([]);
+
+  if (options.showThresholdLabel === false) {
+    ctx.restore();
+    return;
+  }
 
   const outsideLeft = options.thresholdLabelPosition === "left-of-axis";
   drawText(ctx, `\u2264 ${Number(threshold).toFixed(2)}m harvest`, outsideLeft ? pad.left - 10 : pad.left + 8, thresholdY - 8, {
