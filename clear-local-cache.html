@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Clear Local Cache - Seaweed Tide Planner</title>
-  <link rel="stylesheet" href="./assets/css/tides.css">
+  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-disclaimer">
 </head>
 <body>
   <main class="app-shell">
@@ -18,6 +18,11 @@
     </section>
   </main>
 
+  <footer class="marine-disclaimer-footer">
+    <p><strong>Safety:</strong> Not for marine navigation or safety-of-life decisions. Tide guidance may be wrong, stale, unverified, or affected by local weather and sea conditions. Check official/local sources and current conditions before acting. <button type="button" data-disclaimer-open>Full disclaimer</button></p>
+  </footer>
+
+  <script type="module" src="./assets/js/disclaimer.js?v=20260611-disclaimer"></script>
   <script>
     async function clearLocalCache() {
       const status = document.getElementById("clearStatus");

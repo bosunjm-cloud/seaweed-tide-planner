@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f766e">
   <title>Map - Seaweed Tide Planner</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-map-card-focus">
+  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-disclaimer">
 </head>
 <body>
   <header class="app-header">
@@ -77,11 +77,16 @@
     </section>
   </main>
 
+  <footer class="marine-disclaimer-footer">
+    <p><strong>Safety:</strong> Not for marine navigation or safety-of-life decisions. Tide guidance may be wrong, stale, unverified, or affected by local weather and sea conditions. Check official/local sources and current conditions before acting. <button type="button" data-disclaimer-open>Full disclaimer</button></p>
+  </footer>
+
   <noscript>
     <div class="noscript">JavaScript is required to display the farm map.</div>
   </noscript>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script type="module" src="./assets/js/map_page.js?v=20260611-map-card-focus"></script>
+  <script type="module" src="./assets/js/disclaimer.js?v=20260611-disclaimer"></script>
+  <script type="module" src="./assets/js/map_page.js?v=20260611-disclaimer"></script>
 </body>
 </html>

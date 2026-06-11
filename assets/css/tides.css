@@ -701,6 +701,7 @@ textarea {
   border-collapse: collapse;
   color: var(--text-sec);
   font-size: 0.8rem;
+  min-width: 860px;
 }
 
 .low-tide-table th {
@@ -714,14 +715,52 @@ textarea {
   text-transform: uppercase;
 }
 
+.low-tide-table th[rowspan] {
+  vertical-align: bottom;
+}
+
+.low-tide-table .tide-group-heading {
+  color: var(--text-main);
+  font-size: 0.78rem;
+  letter-spacing: 0.8px;
+  text-align: center;
+}
+
+.low-tide-table thead tr:nth-child(2) th {
+  border-bottom-color: var(--border);
+  color: var(--text-muted);
+  text-align: center;
+}
+
 .low-tide-table td {
   padding: 5px 8px;
   border-bottom: 1px solid var(--border);
 }
 
+.tide-event-cell {
+  white-space: nowrap;
+}
+
+.tide-event-height {
+  color: var(--text-muted);
+}
+
 .low-tide-table tr.harvest-row td {
   color: var(--harvest);
   font-weight: 600;
+}
+
+.low-tide-table tr.harvest-row .high-tide-cell {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.low-tide-table tr.harvest-row .high-tide-cell .tide-event-height {
+  color: var(--warn);
+}
+
+.low-tide-table tr.harvest-row .tide-event-height {
+  color: var(--harvest);
 }
 
 .harvest-text,
@@ -766,6 +805,92 @@ textarea {
   margin-top: 12px;
   color: var(--text-muted);
   background: #fff;
+}
+
+.marine-disclaimer-footer {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 16px 18px 28px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.marine-disclaimer-footer strong {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.marine-disclaimer-footer button {
+  min-height: 28px;
+  margin-left: 8px;
+  padding: 3px 10px;
+  color: var(--text-sec);
+  background: #fff;
+}
+
+body.disclaimer-open {
+  overflow: hidden;
+}
+
+.marine-disclaimer-modal[hidden] {
+  display: none;
+}
+
+.marine-disclaimer-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: rgba(236, 253, 245, 0.96);
+  backdrop-filter: blur(7px);
+}
+
+.marine-disclaimer-panel {
+  width: min(920px, 100%);
+  max-height: calc(100vh - 56px);
+  overflow: auto;
+  padding: 28px;
+  border: 2px solid var(--danger);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.24);
+}
+
+.marine-disclaimer-panel h2 {
+  margin: 0 0 14px;
+  color: var(--danger);
+  font-size: 1.35rem;
+  letter-spacing: 0;
+}
+
+.marine-disclaimer-copy {
+  display: grid;
+  gap: 12px;
+  color: var(--text-main);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.marine-disclaimer-copy p {
+  margin: 0;
+}
+
+.marine-disclaimer-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+.marine-disclaimer-actions button {
+  min-height: 42px;
+  padding: 8px 16px;
+  color: #fff;
+  border-color: var(--danger);
+  background: var(--danger);
+  font-weight: 700;
 }
 
 .harvest-calendar {

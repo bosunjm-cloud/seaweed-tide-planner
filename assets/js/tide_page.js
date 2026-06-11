@@ -596,10 +596,11 @@ function renderLowTides() {
   if (!forecast) return;
 
   const endMs = forecast.now.getTime() + state.lowListDays * 86400000;
-  const lows = forecast.fullExtremes.filter((extreme) => {
+  const upcomingLows = forecast.fullExtremes.filter((extreme) => {
     return extreme.type === "low" && extreme.timeMs >= forecast.now.getTime() && extreme.timeMs <= endMs;
   });
-  const dailyLows = lowestLowPerLocalDay(lows);
+  const dailyRows = buildDailyTideRows(forecast.now, state.lowListDays);
+  const dailyLows = dailyRows.map((row) => row.lowestLow).filter(Boolean);
   const moonByDay = moonMapByLocalDay(forecast.moons);
   const springLowDays = springLowDaySet(dailyLows, forecast.springs);
   const tableHarvestWindows = groupAdjacentRanges(
@@ -615,43 +616,84 @@ function renderLowTides() {
 
   els.lowTideRangeLabel.textContent = `next ${state.lowListDays} days`;
 
-  if (!dailyLows.length) {
-    els.lowTideList.innerHTML = `<tr><td colspan="4" class="empty-state">No upcoming low tides found in this range.</td></tr>`;
+  if (!dailyRows.length || !upcomingLows.length) {
+    els.lowTideList.innerHTML = `<tr><td colspan="6" class="empty-state">No tide events found in this range.</td></tr>`;
     return;
   }
 
-  els.lowTideList.innerHTML = dailyLows.map((low) => {
-    const dateKey = localDateKey(low.date, state.profile.timezone);
-    const isHarvest = state.thresholdEnabled && low.heightM <= state.thresholdM;
-    const isSpringLow = isHarvest && springLowDays.has(dateKey);
-    const moon = moonByDay.get(dateKey);
-    const windowInfo = harvestWindowInfoForDate(dateKey, tableHarvestWindows);
+  els.lowTideList.innerHTML = dailyRows.map((row) => {
+    const isHarvest = state.thresholdEnabled && row.lows.some((low) => low.heightM <= state.thresholdM);
+    const isSpringLow = isHarvest && springLowDays.has(row.dateKey);
+    const moon = moonByDay.get(row.dateKey);
+    const windowInfo = harvestWindowInfoForDate(row.dateKey, tableHarvestWindows);
     const status = renderLowTideStatus(isHarvest, isSpringLow, moon, windowInfo);
     const rowClass = isHarvest ? "harvest-row" : "";
 
     return `
       <tr class="${rowClass}">
-        <td>${escapeHtml(formatDate(low.date, state.profile.timezone))}</td>
-        <td>${escapeHtml(formatTime(low.date, state.profile.timezone))}</td>
-        <td>${escapeHtml(formatMetres(low.heightM))}</td>
+        <td>${escapeHtml(formatDate(row.date, state.profile.timezone))}</td>
+        <td class="high-tide-cell">${formatTidePeriodCell(row.highMorning)}</td>
+        <td class="high-tide-cell">${formatTidePeriodCell(row.highAfternoon)}</td>
+        <td class="low-tide-cell">${formatTidePeriodCell(row.lowMorning)}</td>
+        <td class="low-tide-cell">${formatTidePeriodCell(row.lowAfternoon)}</td>
         <td>${status}</td>
       </tr>
     `;
   }).join("");
 }
 
-function lowestLowPerLocalDay(lows) {
-  const byDay = new Map();
+function buildDailyTideRows(startDate, dayCount) {
+  const startKey = localDateKey(startDate, state.profile.timezone);
+  const rows = [];
 
-  for (const low of lows) {
-    const dateKey = localDateKey(low.date, state.profile.timezone);
-    const current = byDay.get(dateKey);
-    if (!current || low.heightM < current.heightM) {
-      byDay.set(dateKey, low);
-    }
+  for (let offset = 0; offset < dayCount; offset += 1) {
+    const dateKey = addDaysToDateKey(startKey, offset);
+    const dayRange = localDayRange(dateKey, state.profile.timezone);
+    const dayCurve = tideCurve(state.profile, dayRange.start, dayRange.end, 10);
+    const extremes = tideExtremes(dayCurve).sort((a, b) => a.timeMs - b.timeMs);
+    const highs = extremes.filter((extreme) => extreme.type === "high").slice(0, 2);
+    const lows = extremes.filter((extreme) => extreme.type === "low").slice(0, 2);
+    const highMorning = highs.filter(isMorningTideEvent);
+    const highAfternoon = highs.filter((extreme) => !isMorningTideEvent(extreme));
+    const lowMorning = lows.filter(isMorningTideEvent);
+    const lowAfternoon = lows.filter((extreme) => !isMorningTideEvent(extreme));
+    const lowestLow = lows.reduce((lowest, low) => {
+      return !lowest || low.heightM < lowest.heightM ? low : lowest;
+    }, null);
+
+    rows.push({
+      dateKey,
+      date: dateKeyToUtcDate(dateKey),
+      highs,
+      lows,
+      highMorning,
+      highAfternoon,
+      lowMorning,
+      lowAfternoon,
+      lowestLow
+    });
   }
 
-  return Array.from(byDay.values()).sort((a, b) => a.timeMs - b.timeMs);
+  return rows;
+}
+
+function isMorningTideEvent(extreme) {
+  return zonedParts(extreme.date, state.profile.timezone).hour < 12;
+}
+
+function formatTidePeriodCell(extremes) {
+  if (!extremes?.length) return `<span class="muted-cell">--</span>`;
+  return extremes.map(formatTideTableCell).join("<br>");
+}
+
+function formatTideTableCell(extreme) {
+  if (!extreme) return `<span class="muted-cell">--</span>`;
+  return `<span class="tide-event-cell">${escapeHtml(formatTime(extreme.date, state.profile.timezone))} <span class="tide-event-height">(${escapeHtml(formatCompactMetres(extreme.heightM))})</span></span>`;
+}
+
+function formatCompactMetres(value) {
+  if (!Number.isFinite(value)) return "--";
+  return `${value.toFixed(2)}m`;
 }
 
 function moonMapByLocalDay(moons) {

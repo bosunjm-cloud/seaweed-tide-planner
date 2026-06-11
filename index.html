@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f766e">
   <title>Seaweed Tide Planner</title>
-  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-today-date">
+  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-high-tide-yellow">
 </head>
 <body>
   <header class="app-header">
@@ -121,15 +121,21 @@
           <canvas id="tideChartOverview" aria-label="3-month tide overview chart"></canvas>
         </div>
 
-        <div class="station-subhead">Upcoming Low Tides (<span id="lowTideRangeLabel">next 14 days</span>)</div>
+        <div class="station-subhead">Tide Table (<span id="lowTideRangeLabel">next 14 days</span>)</div>
         <div class="station-table-wrap">
           <table class="low-tide-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Height</th>
-                <th>Harvest</th>
+                <th rowspan="2">Date</th>
+                <th colspan="2" class="tide-group-heading high-tide-heading">High Tide</th>
+                <th colspan="2" class="tide-group-heading">Low Tide</th>
+                <th rowspan="2">Harvest</th>
+              </tr>
+              <tr>
+                <th>Morning</th>
+                <th>Afternoon</th>
+                <th>Morning</th>
+                <th>Afternoon</th>
               </tr>
             </thead>
             <tbody id="lowTideList"></tbody>
@@ -160,10 +166,15 @@
     </section>
   </main>
 
+  <footer class="marine-disclaimer-footer">
+    <p><strong>Safety:</strong> Not for marine navigation or safety-of-life decisions. Tide guidance may be wrong, stale, unverified, or affected by local weather and sea conditions. Check official/local sources and current conditions before acting. <button type="button" data-disclaimer-open>Full disclaimer</button></p>
+  </footer>
+
   <noscript>
     <div class="noscript">JavaScript is required to calculate and display tide predictions.</div>
   </noscript>
 
-  <script type="module" src="./assets/js/tide_page.js?v=20260611-today-date"></script>
+  <script type="module" src="./assets/js/disclaimer.js?v=20260611-disclaimer"></script>
+  <script type="module" src="./assets/js/tide_page.js?v=20260611-high-tide-yellow"></script>
 </body>
 </html>
