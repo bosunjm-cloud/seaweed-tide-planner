@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Map - Seaweed Tide Planner</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-map-card-focus">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div>
+        <p class="eyebrow">Seaweed farming tide guidance</p>
+        <h1>Farm Map</h1>
+      </div>
+      <div class="header-actions">
+        <nav class="app-nav" aria-label="Main navigation">
+          <a href="./index.html">Tides</a>
+          <a href="./map.html" aria-current="page">Map</a>
+          <a href="./admin.html">Admin</a>
+        </nav>
+        <div class="header-status">
+          <span id="mapStatus" class="status-pill status-muted">Loading locations</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell map-shell">
+    <section class="map-intro-card">
+      <div>
+        <h2>Farm Locations</h2>
+        <p>Farm locations with confirmed GPS coordinates appear on the map. Select a marker to open the tide planner for that farm.</p>
+      </div>
+      <div class="map-intro-meta">
+        <div class="map-legend" aria-label="Map symbol legend">
+          <span><i class="map-marker-sample farm" aria-hidden="true">&#127807;</i> Farm</span>
+          <span><i class="map-marker-sample tide-reference" aria-hidden="true">&#8776;</i> Tide reference</span>
+        </div>
+        <span id="mapDataSource" class="field-hint">Location source loading</span>
+      </div>
+    </section>
+
+    <section class="map-layout" aria-label="Farm location map and list">
+      <div class="map-panel">
+        <div id="farmMap" class="farm-map" role="application" aria-label="Farm location map"></div>
+        <div id="mapFallback" class="empty-state map-fallback" hidden></div>
+      </div>
+
+      <aside class="map-sidebar">
+        <section class="panel">
+          <div class="section-head compact">
+            <h2>Mapped Farms</h2>
+            <span id="mappedCount" class="status-pill">0</span>
+          </div>
+          <div id="mappedLocationList" class="map-location-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head compact">
+            <h2>Tide References</h2>
+            <span id="referenceCount" class="status-pill">0</span>
+          </div>
+          <div id="tideReferenceList" class="map-location-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head compact">
+            <h2>Needs GPS</h2>
+            <span id="missingCount" class="status-pill status-muted">0</span>
+          </div>
+          <div id="missingLocationList" class="map-location-list"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <noscript>
+    <div class="noscript">JavaScript is required to display the farm map.</div>
+  </noscript>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="./assets/js/map_page.js?v=20260611-map-card-focus"></script>
+</body>
+</html>

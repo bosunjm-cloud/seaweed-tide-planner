@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Seaweed Tide Planner</title>
+  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-today-date">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div>
+        <p class="eyebrow">Seaweed farming tide guidance</p>
+        <h1>Seaweed Tide Planner</h1>
+      </div>
+      <div class="header-actions">
+        <nav class="app-nav" aria-label="Main navigation">
+          <a href="./index.html" aria-current="page">Tides</a>
+          <a href="./map.html">Map</a>
+          <a href="./admin.html">Admin</a>
+        </nav>
+        <div class="header-status">
+        <span id="verificationBadge" class="status-pill">Loading</span>
+        <span id="datasetBadge" class="status-pill status-muted">Dataset</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="location-card" aria-label="Location and tide controls">
+      <div class="field-group location-field">
+        <label for="locationSelect">Location</label>
+        <select id="locationSelect"></select>
+        <span id="locationMeta" class="field-hint"></span>
+      </div>
+
+      <div class="clock-panel" aria-live="polite">
+        <span id="localClock" class="clock-value">Loading</span>
+        <span id="timeZoneLabel" class="field-hint">Times shown in selected timezone</span>
+      </div>
+
+      <div class="location-card-status">
+        <span id="lastUpdated" class="panel-meta">Updated --</span>
+        <span class="field-hint">Standalone Tide Planner</span>
+      </div>
+    </section>
+
+    <section class="summary-grid" aria-label="Tide summary">
+      <article class="summary-card today-tides-card">
+        <div class="card-label">Todays Tides <span id="todayTidesDate"></span></div>
+        <div class="summary-line"><strong>Current:</strong> <span id="currentTideState">Loading</span></div>
+        <div class="summary-line"><strong>Low Tide:</strong> <span id="todayLowTides">--</span></div>
+        <div class="summary-line"><strong>High Tide:</strong> <span id="todayHighTides">--</span></div>
+      </article>
+
+      <article class="summary-card accent">
+        <div class="card-label">&#127807; Next Harvest</div>
+        <div class="summary-line"><strong>Next Harvest window:</strong> <span id="harvestWindow">Loading</span></div>
+        <div class="summary-line harvest-detail-line"><strong id="harvestStartLabel">Low Tide:</strong> <span id="harvestStartLow">--</span></div>
+        <div class="summary-line harvest-detail-line"><strong>Lowest Tide:</strong> <span id="harvestLowestLow">--</span></div>
+        <div class="summary-line harvest-detail-line"><strong id="harvestEndLabel">Low Tide:</strong> <span id="harvestEndLow">--</span></div>
+      </article>
+
+      <article class="summary-card moon-summary-card">
+        <div class="moon-disc summary-moon-disc" aria-hidden="true"></div>
+        <div class="moon-summary-content">
+          <div class="card-label">Moon phase</div>
+          <div id="moonPhase" class="card-main">Loading</div>
+          <div id="moonIllumination" class="card-value">--</div>
+          <div class="moon-events">
+            <span>New: <strong id="nextNewMoon">--</strong></span>
+            <span>Full: <strong id="nextFullMoon">--</strong></span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="reference-card" aria-label="Reference tide station">
+      <p id="referenceStationLine" class="reference-line">Reference station loading</p>
+    </section>
+
+    <section class="station-tides-section" aria-label="Local tides">
+      <div class="station-tide-panel">
+        <div class="station-threshold-bar">
+          <label class="station-check-row" for="thresholdEnabled">
+            <input id="thresholdEnabled" type="checkbox" checked>
+            <span>Show harvest</span>
+          </label>
+          <span>when tide is below</span>
+          <input id="thresholdInput" type="number" min="0" max="5" step="0.05" inputmode="decimal" value="0.70">
+          <span>m</span>
+          <button id="thresholdDefault" type="button">Reset</button>
+        </div>
+
+        <div class="station-subhead chart-subhead">
+          <span class="station-subhead-main">
+            <span id="forecastRangeLabel">7-Day Tide Forecast</span>
+            <span class="harvest-chip">Harvest window</span>
+          </span>
+          <span class="forecast-range-selector" aria-label="Forecast range">
+            <button type="button" data-forecast-days="3">3 day</button>
+            <button type="button" data-forecast-days="5">5 day</button>
+            <button type="button" data-forecast-days="7" aria-pressed="true">7 day</button>
+          </span>
+        </div>
+        <div class="station-chart-frame detail">
+          <div class="chart-legend" aria-hidden="true">
+            <span class="legend-line">Tide Height</span>
+            <span class="legend-high">High Tide</span>
+            <span class="legend-low">Low Tide</span>
+            <span class="legend-now">Now</span>
+          </div>
+          <canvas id="tideChart7d" aria-label="7-day tide forecast chart"></canvas>
+        </div>
+
+        <div class="station-subhead">3-Month Tide Overview &amp; Harvest Windows</div>
+        <div id="overviewHarvestWindows" class="harvest-window-summary" aria-live="polite"></div>
+        <div class="station-chart-frame overview">
+          <canvas id="tideChartOverview" aria-label="3-month tide overview chart"></canvas>
+        </div>
+
+        <div class="station-subhead">Upcoming Low Tides (<span id="lowTideRangeLabel">next 14 days</span>)</div>
+        <div class="station-table-wrap">
+          <table class="low-tide-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Height</th>
+                <th>Harvest</th>
+              </tr>
+            </thead>
+            <tbody id="lowTideList"></tbody>
+          </table>
+        </div>
+        <button id="loadMoreLows" type="button" class="load-more-button">Load next 14 days &darr;</button>
+
+        <div class="station-subhead">Harvest Calendar (3 months)</div>
+        <div id="harvestCalendar" class="harvest-calendar"></div>
+      </div>
+    </section>
+
+    <section class="info-grid">
+      <article class="panel info-panel">
+        <h2>Location and backend</h2>
+        <div id="locationDetails" class="detail-stack"></div>
+      </article>
+
+      <article class="panel info-panel">
+        <h2>Source and verification</h2>
+        <div id="sourceDetails" class="detail-stack"></div>
+      </article>
+
+      <article class="panel info-panel warning">
+        <h2>Safety note</h2>
+        <div id="safetyDetails" class="detail-stack"></div>
+      </article>
+    </section>
+  </main>
+
+  <noscript>
+    <div class="noscript">JavaScript is required to calculate and display tide predictions.</div>
+  </noscript>
+
+  <script type="module" src="./assets/js/tide_page.js?v=20260611-today-date"></script>
+</body>
+</html>

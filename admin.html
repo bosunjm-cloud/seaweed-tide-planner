@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Admin - Seaweed Tide Planner</title>
+  <link rel="stylesheet" href="./assets/css/tides.css?v=20260610-dataset-clean">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div>
+        <p class="eyebrow">Seaweed farming tide guidance</p>
+        <h1>Admin</h1>
+      </div>
+      <div class="admin-header-controls">
+        <nav class="app-nav" aria-label="Main navigation">
+          <a href="./index.html">Tides</a>
+          <a href="./map.html">Map</a>
+          <a href="./admin.html" aria-current="page">Admin</a>
+        </nav>
+        <div class="admin-header-status">
+          <span id="adminConnectionStatus" class="status-pill status-muted">Connecting</span>
+          <p id="adminAuthStatus" class="admin-auth-status">Sign in with an approved Supabase Auth user to save changes.</p>
+        </div>
+        <form id="adminAuthForm" class="admin-auth-inline">
+          <label>
+            Email
+            <input id="adminEmail" type="email" autocomplete="email" required>
+          </label>
+          <label>
+            Password
+            <input id="adminPassword" type="password" autocomplete="current-password" required>
+          </label>
+          <button id="adminSignIn" type="submit">Sign in</button>
+          <button id="adminSignOut" type="button">Sign out</button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell admin-shell">
+    <details class="admin-management-card" open>
+      <summary class="admin-card-summary">
+        <span>
+          <strong>Locations</strong>
+          <small>Farm/app locations shown to users</small>
+        </span>
+        <span id="locationCount" class="status-pill">0 rows</span>
+      </summary>
+
+      <div class="admin-card-body">
+        <div class="admin-toolbar">
+          <button id="reloadLocations" type="button">Reload</button>
+          <button id="newLocation" type="button">Add location</button>
+          <span id="locationSaveStatus" class="admin-status" aria-live="polite"></span>
+        </div>
+
+        <div class="responsive-table-wrap">
+          <table class="management-table admin-data-table">
+            <thead>
+              <tr>
+                <th>Location ID</th>
+                <th>Name</th>
+                <th>Short name</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Associated tide dataset</th>
+                <th>Harvest tide <= (m)</th>
+                <th>App use</th>
+                <th data-admin-only>Action</th>
+              </tr>
+            </thead>
+            <tbody id="locationsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <details class="admin-management-card" open>
+      <summary class="admin-card-summary">
+        <span>
+          <strong>Tide datasets</strong>
+          <small>Processed tide data batches and source metadata</small>
+        </span>
+        <span id="datasetCount" class="status-pill">0 rows</span>
+      </summary>
+
+      <div class="admin-card-body">
+        <div class="admin-toolbar">
+          <button id="reloadDatasets" type="button">Reload</button>
+          <button id="newDataset" type="button">Add dataset</button>
+          <span id="datasetSaveStatus" class="admin-status" aria-live="polite"></span>
+        </div>
+
+        <div class="responsive-table-wrap">
+          <table class="management-table admin-data-table">
+            <thead>
+              <tr>
+                <th>Dataset ID</th>
+                <th>Name</th>
+                <th>Location name</th>
+                <th>Location region</th>
+                <th>Location coordinates</th>
+                <th>Coverage dates</th>
+                <th>Source name</th>
+                <th>Verification</th>
+                <th>Dataset use</th>
+                <th data-admin-only>Action</th>
+              </tr>
+            </thead>
+            <tbody id="datasetsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <script type="module" src="./assets/js/admin_page.js?v=20260610-dataset-clean"></script>
+</body>
+</html>
