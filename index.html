@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f766e">
   <title>Seaweed Tide Planner</title>
-  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-hide-mobile-overview">
+  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-location-reference">
 </head>
 <body>
   <header class="app-header">
@@ -34,6 +34,7 @@
         <label for="locationSelect">Location</label>
         <select id="locationSelect"></select>
         <span id="locationMeta" class="field-hint"></span>
+        <span id="locationReferenceStation" class="field-hint location-reference-station"></span>
       </div>
 
       <div class="clock-panel" aria-live="polite">
@@ -77,10 +78,6 @@
       </article>
     </section>
 
-    <section class="reference-card" aria-label="Reference tide station">
-      <p id="referenceStationLine" class="reference-line">Reference station loading</p>
-    </section>
-
     <section class="station-tides-section" aria-label="Local tides">
       <div class="station-tide-panel">
         <div class="station-threshold-bar">
@@ -94,7 +91,7 @@
           <button id="thresholdDefault" type="button">Reset</button>
         </div>
 
-        <div class="station-subhead chart-subhead overview-chart-subhead">
+        <div class="station-subhead chart-subhead">
           <span class="station-subhead-main">
             <span id="forecastRangeLabel">7-Day Tide Forecast</span>
             <span class="harvest-chip">Harvest window</span>
@@ -115,7 +112,7 @@
           <canvas id="tideChart7d" aria-label="7-day tide forecast chart"></canvas>
         </div>
 
-        <div class="station-subhead chart-subhead">
+        <div class="station-subhead chart-subhead overview-chart-subhead">
           <span id="overviewRangeLabel">3-Month Tide Overview &amp; Harvest Windows</span>
           <span class="overview-range-selector" aria-label="Overview range">
             <button type="button" data-overview-months="1">1 month</button>
@@ -181,6 +178,6 @@
   </noscript>
 
   <script type="module" src="./assets/js/disclaimer.js?v=20260611-disclaimer"></script>
-  <script type="module" src="./assets/js/tide_page.js?v=20260611-hide-mobile-overview"></script>
+  <script type="module" src="./assets/js/tide_page.js?v=20260611-location-reference"></script>
 </body>
 </html>

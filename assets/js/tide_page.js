@@ -71,6 +71,7 @@ function cacheElements() {
   [
     "locationSelect",
     "locationMeta",
+    "locationReferenceStation",
     "localClock",
     "timeZoneLabel",
     "verificationBadge",
@@ -78,7 +79,6 @@ function cacheElements() {
     "thresholdEnabled",
     "thresholdInput",
     "thresholdDefault",
-    "referenceStationLine",
     "currentTideState",
     "todayTidesDate",
     "todayLowTides",
@@ -288,6 +288,7 @@ function renderLocationSummary() {
   const { location, profile } = state;
   const dataStatus = getDataStatus();
   els.locationMeta.textContent = `${location.region}, ${location.country}`;
+  els.locationReferenceStation.textContent = `Reference station: ${referenceStationLabel(profile)}`;
   els.verificationBadge.textContent = statusLabel(profile.verificationStatus);
   els.verificationBadge.dataset.status = profile.verificationStatus;
   els.datasetBadge.textContent = profile.version;
@@ -305,10 +306,10 @@ function renderLocationSummary() {
     <span><strong>Data mode:</strong> ${escapeHtml(dataStatus.mode)}</span>
   `;
 
-  els.referenceStationLine.innerHTML = `
-    Reference station: ${escapeHtml(profile.name)} - harmonic prediction - constituents:
-    <a href="${escapeAttribute(profile.sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(profile.sourceName)}</a>
-  `;
+}
+
+function referenceStationLabel(profile) {
+  return String(profile?.name || "Reference station").replace(/\s+Reference$/i, "");
 }
 
 function renderSummaryCards(forecast) {

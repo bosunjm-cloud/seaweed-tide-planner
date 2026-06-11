@@ -402,15 +402,6 @@ textarea {
   line-height: 1.28;
 }
 
-.reference-card {
-  margin: 0 0 12px;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--shadow);
-}
-
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -450,17 +441,6 @@ textarea {
   border-radius: 8px 8px 0 0;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: var(--shadow);
-}
-
-.reference-line {
-  margin: 0 0 6px;
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  overflow-wrap: anywhere;
-}
-
-.reference-line a {
-  overflow-wrap: anywhere;
 }
 
 .station-threshold-bar {
