@@ -23,6 +23,10 @@ const COLORS = {
   now: "#ef4444"
 };
 
+const CHART_STATES = new WeakMap();
+const BOUND_CANVASES = new WeakSet();
+const INTERACTION_FLAGS = new WeakMap();
+
 function prepareCanvas(canvas) {
   const rect = canvas.getBoundingClientRect();
   const width = Math.max(260, Math.round(rect.width || canvas.parentElement?.clientWidth || 640));
@@ -72,7 +76,7 @@ export function renderTideChart(canvas, curve, extremes, options = {}) {
   const { ctx, width, height } = prepareCanvas(canvas);
   const pad = {
     top: Number.isFinite(options.topPadding) ? options.topPadding : options.legendSpace ? 42 : 18,
-    right: 16,
+    right: Number.isFinite(options.rightPadding) ? options.rightPadding : 16,
     bottom: Number.isFinite(options.bottomPadding) ? options.bottomPadding : options.timeGrid === "half-day" || options.timeGrid === "month" ? 46 : 34,
     left: Number.isFinite(options.leftPadding) ? options.leftPadding : 46
   };
@@ -85,6 +89,31 @@ export function renderTideChart(canvas, curve, extremes, options = {}) {
 
   const x = (timeMs) => pad.left + ((timeMs - minTime) / (maxTime - minTime || 1)) * plotW;
   const y = (heightM) => pad.top + (1 - (heightM - minH) / (maxH - minH || 1)) * plotH;
+  const extremeMarkers = options.showExtremes === false
+    ? []
+    : buildExtremeMarkers(extremes, x, y, minTime, maxTime, options);
+  const chartState = {
+    canvas,
+    curve,
+    extremes,
+    options,
+    width,
+    height,
+    pad,
+    plotW,
+    plotH,
+    minTime,
+    maxTime,
+    minH,
+    maxH,
+    x,
+    y,
+    extremeMarkers,
+    activePoint: options.activePoint || null
+  };
+
+  CHART_STATES.set(canvas, chartState);
+  bindChartInteractions(canvas);
 
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
@@ -116,7 +145,7 @@ export function renderTideChart(canvas, curve, extremes, options = {}) {
 
   drawCurve(ctx, curve, x, y, pad, plotH);
   if (options.showExtremes !== false) {
-    drawExtremes(ctx, extremes, x, y, minTime, maxTime, options);
+    drawExtremes(ctx, extremeMarkers, options);
   }
 
   if (options.now) {
@@ -132,6 +161,10 @@ export function renderTideChart(canvas, curve, extremes, options = {}) {
       ctx.restore();
       drawText(ctx, "Now", nowX + 5, pad.top + 10, { color: COLORS.now, size: options.tickLabelSize || 11 });
     }
+  }
+
+  if (chartState.activePoint) {
+    drawActiveReadout(ctx, chartState.activePoint, chartState);
   }
 }
 
@@ -605,29 +638,43 @@ function drawCurve(ctx, curve, x, y, pad, plotH) {
   ctx.restore();
 }
 
-function drawExtremes(ctx, extremes, x, y, minTime, maxTime, options) {
-  ctx.save();
-
+function buildExtremeMarkers(extremes, x, y, minTime, maxTime, options) {
   const visible = extremes.filter((extreme) => extreme.timeMs >= minTime && extreme.timeMs <= maxTime);
   const compact = !!options.compact;
-  const stride = compact ? Math.max(1, Math.ceil(visible.length / 28)) : 1;
+  const maxCompactMarkers = Number.isFinite(options.compactExtremeMax) ? options.compactExtremeMax : 42;
+  const stride = Number.isFinite(options.extremeMarkerStride)
+    ? Math.max(1, options.extremeMarkerStride)
+    : compact ? Math.max(1, Math.ceil(visible.length / maxCompactMarkers)) : 1;
+  const size = Number.isFinite(options.extremeMarkerSize) ? options.extremeMarkerSize : compact ? 3.8 : 5;
 
-  visible.forEach((extreme, index) => {
-    if (compact && index % stride !== 0) return;
+  return visible
+    .filter((_, index) => !compact || index % stride === 0)
+    .map((extreme) => ({
+      extreme,
+      type: extreme.type,
+      x: x(extreme.timeMs),
+      y: y(extreme.heightM),
+      size
+    }));
+}
 
-    const xx = x(extreme.timeMs);
-    const yy = y(extreme.heightM);
-    const isLow = extreme.type === "low";
+function drawExtremes(ctx, markers, options) {
+  ctx.save();
 
+  const compact = !!options.compact;
+  const showLabels = options.showExtremeLabels !== false;
+
+  markers.forEach((marker) => {
+    const isLow = marker.type === "low";
     ctx.fillStyle = isLow ? COLORS.low : COLORS.high;
     if (isLow) {
-      drawDiamond(ctx, xx, yy, 5);
+      drawDiamond(ctx, marker.x, marker.y, marker.size);
     } else {
-      drawTriangle(ctx, xx, yy, 5);
+      drawTriangle(ctx, marker.x, marker.y, marker.size);
     }
 
-    if (!compact && isLow) {
-      drawText(ctx, formatTime(extreme.date, options.timeZone || "UTC"), xx, yy + 12, {
+    if (showLabels && !compact && isLow) {
+      drawText(ctx, formatTime(marker.extreme.date, options.timeZone || "UTC"), marker.x, marker.y + 12, {
         align: "center",
         color: COLORS.low,
         size: 10,
@@ -637,6 +684,215 @@ function drawExtremes(ctx, extremes, x, y, minTime, maxTime, options) {
   });
 
   ctx.restore();
+}
+
+function drawActiveReadout(ctx, point, state) {
+  const { width, height, pad, plotH, x, y, options } = state;
+  const xx = x(point.timeMs);
+  const yy = y(point.heightM);
+  const chartBottom = pad.top + plotH;
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(15, 118, 110, 0.72)";
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(xx, pad.top);
+  ctx.lineTo(xx, chartBottom);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = point.type === "high" ? COLORS.high : point.type === "low" ? COLORS.low : COLORS.line;
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(xx, yy, options.compact ? 4.5 : 5.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  drawTooltip(ctx, point, xx, yy, width, height, options);
+  ctx.restore();
+}
+
+function drawTooltip(ctx, point, xPos, yPos, width, height, options) {
+  const title = point.type === "high" ? "High tide" : point.type === "low" ? "Low tide" : "Tide height";
+  const lines = [
+    title,
+    formatDateTime(new Date(point.timeMs), options.timeZone || "UTC"),
+    `${Number(point.heightM).toFixed(2)} m`
+  ];
+  const fontSize = options.compact ? 10 : 11;
+  const lineHeight = fontSize + 4;
+  const paddingX = 8;
+  const paddingY = 7;
+
+  ctx.save();
+  ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif`;
+  const boxW = Math.max(...lines.map((line) => ctx.measureText(line).width)) + paddingX * 2;
+  const boxH = lines.length * lineHeight + paddingY * 2 - 3;
+  let boxX = xPos + 10;
+  let boxY = yPos - boxH - 12;
+
+  if (boxX + boxW > width - 4) boxX = xPos - boxW - 10;
+  if (boxX < 4) boxX = 4;
+  if (boxY < 4) boxY = yPos + 12;
+  if (boxY + boxH > height - 4) boxY = height - boxH - 4;
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
+  ctx.strokeStyle = "rgba(15, 118, 110, 0.34)";
+  ctx.lineWidth = 1;
+  roundRect(ctx, boxX, boxY, boxW, boxH, 7);
+  ctx.fill();
+  ctx.stroke();
+
+  lines.forEach((line, index) => {
+    drawText(ctx, line, boxX + paddingX, boxY + paddingY + index * lineHeight + lineHeight / 2 - 1, {
+      color: index === 0 ? COLORS.text : COLORS.axis,
+      size: fontSize,
+      weight: index === 0 ? 700 : 600
+    });
+  });
+  ctx.restore();
+}
+
+function roundRect(ctx, xPos, yPos, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(xPos + r, yPos);
+  ctx.lineTo(xPos + width - r, yPos);
+  ctx.quadraticCurveTo(xPos + width, yPos, xPos + width, yPos + r);
+  ctx.lineTo(xPos + width, yPos + height - r);
+  ctx.quadraticCurveTo(xPos + width, yPos + height, xPos + width - r, yPos + height);
+  ctx.lineTo(xPos + r, yPos + height);
+  ctx.quadraticCurveTo(xPos, yPos + height, xPos, yPos + height - r);
+  ctx.lineTo(xPos, yPos + r);
+  ctx.quadraticCurveTo(xPos, yPos, xPos + r, yPos);
+  ctx.closePath();
+}
+
+function bindChartInteractions(canvas) {
+  if (BOUND_CANVASES.has(canvas)) return;
+
+  canvas.addEventListener("pointerdown", handlePointerDown);
+  canvas.addEventListener("pointermove", handlePointerMove);
+  canvas.addEventListener("pointerup", handlePointerUp);
+  canvas.addEventListener("pointercancel", handlePointerUp);
+  canvas.addEventListener("lostpointercapture", handlePointerUp);
+  BOUND_CANVASES.add(canvas);
+}
+
+function handlePointerDown(event) {
+  const canvas = event.currentTarget;
+  const state = CHART_STATES.get(canvas);
+  if (!state) return;
+
+  event.preventDefault();
+  try {
+    canvas.setPointerCapture?.(event.pointerId);
+  } catch {
+    // Synthetic tests and a few embedded browsers can report pointer IDs that cannot be captured.
+  }
+  INTERACTION_FLAGS.set(canvas, { dragging: true, pointerId: event.pointerId });
+  updateInteraction(canvas, event, true);
+}
+
+function handlePointerMove(event) {
+  const canvas = event.currentTarget;
+  const flags = INTERACTION_FLAGS.get(canvas);
+  if (!flags?.dragging || flags.pointerId !== event.pointerId) return;
+
+  event.preventDefault();
+  updateInteraction(canvas, event, false);
+}
+
+function handlePointerUp(event) {
+  const canvas = event.currentTarget;
+  const flags = INTERACTION_FLAGS.get(canvas);
+  if (flags?.pointerId === event.pointerId) {
+    INTERACTION_FLAGS.set(canvas, { dragging: false, pointerId: null });
+  }
+}
+
+function updateInteraction(canvas, event, preferExtreme) {
+  const state = CHART_STATES.get(canvas);
+  if (!state) return;
+
+  const pointer = canvasPointer(event, canvas);
+  const point = preferExtreme
+    ? nearestExtremePoint(state, pointer) || curvePointAtPointer(state, pointer)
+    : curvePointAtPointer(state, pointer);
+
+  if (!point) return;
+
+  canvas.title = `${formatDateTime(new Date(point.timeMs), state.options.timeZone || "UTC")} - ${Number(point.heightM).toFixed(2)} m`;
+  renderTideChart(canvas, state.curve, state.extremes, {
+    ...state.options,
+    activePoint: point
+  });
+}
+
+function canvasPointer(event, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  };
+}
+
+function nearestExtremePoint(state, pointer) {
+  if (!state.extremeMarkers.length) return null;
+
+  const hitRadius = Number.isFinite(state.options.extremeHitRadius)
+    ? state.options.extremeHitRadius
+    : state.options.compact ? 16 : 12;
+  let best = null;
+
+  for (const marker of state.extremeMarkers) {
+    const distance = Math.hypot(pointer.x - marker.x, pointer.y - marker.y);
+    if (distance <= hitRadius && (!best || distance < best.distance)) {
+      best = { marker, distance };
+    }
+  }
+
+  if (!best) return null;
+  const extreme = best.marker.extreme;
+  return {
+    type: extreme.type,
+    timeMs: extreme.timeMs,
+    heightM: extreme.heightM
+  };
+}
+
+function curvePointAtPointer(state, pointer) {
+  if (!state.curve.length) return null;
+
+  const clampedX = Math.min(state.pad.left + state.plotW, Math.max(state.pad.left, pointer.x));
+  const ratio = (clampedX - state.pad.left) / (state.plotW || 1);
+  const timeMs = state.minTime + ratio * (state.maxTime - state.minTime);
+  const heightM = interpolateCurveHeight(state.curve, timeMs);
+
+  return {
+    type: "curve",
+    timeMs,
+    heightM
+  };
+}
+
+function interpolateCurveHeight(curve, timeMs) {
+  if (timeMs <= curve[0].timeMs) return curve[0].heightM;
+  if (timeMs >= curve[curve.length - 1].timeMs) return curve[curve.length - 1].heightM;
+
+  for (let i = 1; i < curve.length; i += 1) {
+    const next = curve[i];
+    if (next.timeMs < timeMs) continue;
+
+    const prev = curve[i - 1];
+    const span = next.timeMs - prev.timeMs || 1;
+    const ratio = (timeMs - prev.timeMs) / span;
+    return prev.heightM + (next.heightM - prev.heightM) * ratio;
+  }
+
+  return curve[curve.length - 1].heightM;
 }
 
 function drawDiamond(ctx, xPos, yPos, size) {

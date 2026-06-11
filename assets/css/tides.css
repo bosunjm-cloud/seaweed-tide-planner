@@ -642,6 +642,8 @@ textarea {
   border: 0;
   border-radius: 0;
   background: #fff;
+  cursor: crosshair;
+  touch-action: none;
 }
 
 .chart-legend {
@@ -1907,7 +1909,7 @@ button:disabled {
   }
 
   .station-tide-panel {
-    padding: 16px 10px 20px;
+    padding: 16px 6px 20px;
   }
 
   .station-subhead {
@@ -1927,6 +1929,11 @@ button:disabled {
 
   .harvest-chip,
   .harvest-window-summary {
+    display: none;
+  }
+
+  .overview-chart-subhead,
+  .overview-chart-frame {
     display: none;
   }
 

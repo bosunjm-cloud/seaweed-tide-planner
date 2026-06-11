@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f766e">
   <title>Seaweed Tide Planner</title>
-  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-mobile-layout">
+  <link rel="stylesheet" href="./assets/css/tides.css?v=20260611-chart-interactions">
 </head>
 <body>
   <header class="app-header">
@@ -94,7 +94,7 @@
           <button id="thresholdDefault" type="button">Reset</button>
         </div>
 
-        <div class="station-subhead chart-subhead">
+        <div class="station-subhead chart-subhead overview-chart-subhead">
           <span class="station-subhead-main">
             <span id="forecastRangeLabel">7-Day Tide Forecast</span>
             <span class="harvest-chip">Harvest window</span>
@@ -123,7 +123,7 @@
           </span>
         </div>
         <div id="overviewHarvestWindows" class="harvest-window-summary" aria-live="polite"></div>
-        <div class="station-chart-frame overview">
+        <div class="station-chart-frame overview overview-chart-frame">
           <canvas id="tideChartOverview" aria-label="3-month tide overview chart"></canvas>
         </div>
 
@@ -180,7 +180,7 @@
     <div class="noscript">JavaScript is required to calculate and display tide predictions.</div>
   </noscript>
 
-  <script type="module" src="./assets/js/disclaimer.js?v=20260611-disclaimer-losses"></script>
-  <script type="module" src="./assets/js/tide_page.js?v=20260611-mobile-layout"></script>
+  <script type="module" src="./assets/js/disclaimer.js?v=20260611-disclaimer"></script>
+  <script type="module" src="./assets/js/tide_page.js?v=20260611-chart-interactions"></script>
 </body>
 </html>

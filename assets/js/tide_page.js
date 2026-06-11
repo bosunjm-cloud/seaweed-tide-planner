@@ -29,7 +29,7 @@ import {
   statusLabel,
   weekdayIndex
 } from "./tide_format.js";
-import { renderTideChart } from "./tide_charts.js?v=20260611-mobile-layout";
+import { renderTideChart } from "./tide_charts.js?v=20260611-chart-interactions";
 
 const state = {
   location: null,
@@ -492,10 +492,14 @@ function renderCharts(forecast) {
     thresholdEnabled: state.thresholdEnabled,
     thresholdM: state.thresholdM,
     now: forecast.now,
-    leftPadding: mobile ? 44 : 96,
+    leftPadding: mobile ? 36 : 96,
+    rightPadding: mobile ? 6 : 16,
     compact: mobile,
     legendSpace: !mobile,
-    showExtremes: !mobile,
+    showExtremes: true,
+    showExtremeLabels: !mobile,
+    extremeMarkerSize: mobile ? 3.8 : 5,
+    extremeHitRadius: mobile ? 18 : 12,
     showThresholdLabel: !mobile,
     topPadding: mobile ? 14 : undefined,
     axisLabelSize: mobile ? 9 : 11,
@@ -505,6 +509,8 @@ function renderCharts(forecast) {
     harvestWindows: weekHarvestWindows,
     thresholdLabelPosition: "left-of-axis"
   });
+
+  if (mobile) return;
 
   renderTideChart(els.tideChartOverview, forecast.overviewCurve, forecast.overviewExtremes, {
     timeZone: state.profile.timezone,
